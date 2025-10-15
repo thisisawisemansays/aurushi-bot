@@ -22,7 +22,10 @@ PERSONA = ""
 def fetch_persona():
     """Fetch PT Pete persona from Google Doc"""
     try:
-        url = f"https://docs.google.com/document/d/{GOOGLE_DOC_ID}/export?format=txt"
+        import time
+        # Add timestamp to prevent caching
+        cache_buster = int(time.time())
+        url = f"https://docs.google.com/document/d/1afW0zAXaPgu2qMDX3fEFovB9mmNBIpzsI03rWY2VdMU/export?format=txt&timestamp={cache_buster}"
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             content = response.text
