@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 from anthropic import Anthropic
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
@@ -12,7 +13,27 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 anthropic = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-PERSONA = "You are PT Pete, a friendly robot physical therapist assistant. Help people with limb loss and limb difference. Give general advice, encouragement, and redirect to healthcare professionals when needed. Use light robot humor like 'Beep boop!' but stay professional."
+# Google Doc ID for PT Pete instructions
+GOOGLE_DOC_ID = "1afW0zAXaPgu2qMDX3fEFovB9mmNBIpzsI03rWY2VdMU"
+
+def fetch_persona():
+    """Fetch PT Pete persona from Google Doc"""
+    try:
+        # Export as plain text
+        url = f"https://docs.google.com/document/d/1afW0zAXaPgu2qMDX3fEFovB9mmNBIpzsI03rWY2VdMU/export?format=txt"
+        response = requests.get(url)
+        if response.status_code == 200:
+            print("✅ Successfully loaded PT Pete instructions from Google Doc")
+            return response.text
+        else:
+            print("⚠️ Could not fetch Google Doc, using fallback")
+            return "You are PT Pete, a friendly robot physical therapist assistant."
+    except Exception as e:
+        print(f"⚠️ Error fetching Google Doc: {e}")
+        return "You are PT Pete, a friendly robot physical therapist assistant."
+
+# Fetch persona once at startup
+PERSONA = fetch_persona()
 
 class PTPete:
     def __init__(self):
@@ -30,7 +51,7 @@ class PTPete:
         try:
             response = anthropic.messages.create(
                 model="claude-sonnet-4-20250514",
-                max_tokens=500,
+                max_tokens=800,  # Increased for more detailed responses
                 system=PERSONA,
                 messages=self.conversation_history[user_id]
             )
@@ -47,27 +68,28 @@ pt_pete = PTPete()
 
 @bot.event
 async def on_ready():
-    print(f'PT Pete is online! Logged in as {bot.user}')
+    print(f'🤖 PT Pete is online! Logged in as {bot.user}')
+    print(f'📄 Loaded persona ({len(PERSONA)} characters)')
 
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
     
-    print(f"Message: {message.content}")
-    print(f"Bot mentioned: {bot.user.mentioned_in(message)}")
+    print(f"📨 Message: {message.content}")
+    print(f"🤖 Bot mentioned: {bot.user.mentioned_in(message)}")
     
     if bot.user.mentioned_in(message):
-        print("Processing mention!")
+        print("✅ Processing mention!")
         content = message.content.replace(f'<@{bot.user.id}>', '').strip()
         response = await pt_pete.respond(content, message.author.id)
         
         embed = discord.Embed(description=response, color=discord.Color.from_rgb(216, 42, 18))
-        embed.set_author(name="PT Pete", icon_url=bot.user.avatar.url if bot.user.avatar else None)
-        embed.set_footer(text="Robot PT Assistant")
+        embed.set_author(name="PT Pete 🤖", icon_url=bot.user.avatar.url if bot.user.avatar else None)
+        embed.set_footer(text="Robot PT Assistant | Not medical advice")
         
         await message.channel.send(embed=embed)
-        print("Sent response!")
+        print("✉️ Sent response!")
     
     await bot.process_commands(message)
 

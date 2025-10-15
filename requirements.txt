@@ -1,3 +1,4 @@
-discord.py==2.6.4
-anthropic==0.69.0
-python-dotenv==1.1.1
+discord.py
+anthropic
+python-dotenv
+requests
