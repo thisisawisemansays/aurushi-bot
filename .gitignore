@@ -1,0 +1,6 @@
+git add .
+git commit -m "Initial commit - PT Pete bot".env
+venv/
+__pycache__/
+*.pyc
+.DS_Store
